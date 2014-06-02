@@ -2,6 +2,7 @@
 """Feature extraction routines."""
 
 import numpy as np
+import scipy.signal
 
 import librosa.core
 import librosa.util
