@@ -137,7 +137,7 @@ def spectral_contrast(S=None,sr=22050):
 
   numBands = 6
   octa = 200*2**np.arange(0,numBands+1)
-  octa = np.concatenate(([0],octa),1)
+  octa = np.insert(octa,0,0)
 
   valley = np.zeros((numBands + 1,numFrames))
   peak = np.zeros((numBands + 1,numFrames))
@@ -174,6 +174,7 @@ def spectral_contrast(S=None,sr=22050):
       alph = np.rint(0.02*np.sum(current_band))
 
 
+    alph = int(alph)
   
     sortedr = np.sort(subBand,axis=0)
   
