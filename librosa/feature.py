@@ -7,7 +7,6 @@ import scipy.signal
 import librosa.core
 import librosa.util
 
-# - Features added by BWalburn
 
 def centroid(S=None, sr=22050):
   '''Compute spectral centroid
@@ -26,9 +25,11 @@ def centroid(S=None, sr=22050):
   
   
   N,K = np.shape(S)
+  # Get bin center frequencies
   freq = np.transpose(np.linspace(0,sr/2,N))
   freq = np.transpose(np.tile(freq,(K,1)))
 
+  # Calculate centroid: weighted mean of frequencies in signal
   if np.sum(S) == 0:
     cent = np.zeros((K,1))
   else:
@@ -55,11 +56,14 @@ def bandwidth(S=None,centroid=None,sr=22050):
   '''
   
   N,K = np.shape(S)
+  # Get bin center frequencies
   freq = np.transpose(np.linspace(0,sr/2,N))
   freq = np.transpose(np.tile(freq,(K,1)))
 
+  # Matrix of centroid frequencies
   centroid = np.tile(np.transpose(centroid),(N,1))
 
+  # Spectral bandwidth calculation
   band = np.sum(np.multiply(S,np.absolute(freq-centroid)),axis=0)/N
   
   return band
@@ -83,16 +87,22 @@ def rolloff(S=None,sr=22050,roll_percent=0.85):
   '''
 
   N,K = np.shape(S)
+  # Get bin center frequencies
   freq = np.transpose(np.linspace(0,sr/2,N))
   freq = np.transpose(np.tile(freq,(K,1)))
 
+  # Calculate roll_percent energy
   total_energy = np.cumsum(S,axis=0)
-
   threshold = roll_percent*total_energy[-1,:]
   threshold = np.tile(threshold,(N,1))
 
+  # Find values under the threshold
   ind = np.where(total_energy < threshold,np.nan,1)
+
+  # Remove frequencies under the threshold
   freq = ind*freq
+
+  # Lowest remaining frequency is the rolloff frequency
   roll = np.nanmin(freq,axis=0)
 
   return roll
@@ -112,8 +122,10 @@ def flux(S=None):
   
   N,K = np.shape(S)
 
+  # Create delayed spectrogram by adding zeros
   delayed_spectrogram = np.concatenate((np.zeros((N,1)), S[:,0:-1]),1)
   flux = S-delayed_spectrogram
+  # Calculation of flux: sum of differences between spectrogram and delayed spectrogram
   fluxVals = np.sum(np.power(flux,2),axis=0)
 
   return fluxVals
@@ -174,14 +186,14 @@ def spectral_contrast(S=None,sr=22050):
       alph = np.rint(0.02*np.sum(current_band))
 
 
-    alph = int(alph)
+    alphi = int(alph)
   
     sortedr = np.sort(subBand,axis=0)
   
-    valley[k-1] = (1/alph)*np.sum(sortedr[0:alph],axis=0)
+    valley[k-1] = (1/alph)*np.sum(sortedr[0:alphi],axis=0)
 
     sortedr = sortedr[::-1]
-    peak[k-1] = (1/alph)*np.sum(sortedr[0:alph],axis=0)
+    peak[k-1] = (1/alph)*np.sum(sortedr[0:alphi],axis=0)
 
   peak = np.transpose(peak)
   valley = np.transpose(valley)
@@ -200,6 +212,7 @@ def rms(S=None):
   '''
   N,K = np.shape(S)
 
+  #Calculate RMS value
   rms = np.sqrt(np.sum(S*S,axis = 0)/N)
   return rms
 
@@ -221,20 +234,20 @@ def line_features(S,order=1,sr=22050):
   - 
   '''
   N,K = np.shape(S)
+
+  # Get bin center frequencies
   freq = np.transpose(np.linspace(0,sr/2,N))
 
   slope = np.zeros((1,K))
   intercept = np.zeros((1,K))
 
+  # Get polynomial coefficients of order order
   for k in range(0,K):
     p = np.polyfit(freq,S[:,k],order)
     slope[:,k] = p[0]
     intercept[:,k] = p[1]
 
   return (slope, intercept)
-
-# - End Features added by BWalburn
-
 
 
 
