@@ -8,248 +8,263 @@ import librosa.core
 import librosa.util
 
 
-def centroid(S=None, sr=22050):
-  '''Compute spectral centroid
+def centroid(y=None, sr=22050, S=None, n_fft=512, hop_length=256):
+    '''Compute spectral centroid
 
-  :parameters:
-  - S : np.ndarray or None
-  stft spectrogram
+    :parameters:
+    - S : np.ndarray or None
+    stft spectrogram
 
-  - sr : int > 0
-  audio sampling rate of ``S``
+    - sr : int > 0
+    audio sampling rate of ``S``
 
-  :returns:
-  - cent : np.ndarray
-  centroid frequencies
-  '''
-  
-  
-  N,K = np.shape(S)
-  # Get bin center frequencies
-  freq = np.transpose(np.linspace(0,sr/2,N))
-  freq = np.transpose(np.tile(freq,(K,1)))
+    :returns:
+    - cent : np.ndarray
+    centroid frequencies
+    '''
+    # If we don't have a spectrogram, build one
+    if S is None:
+      S = librosa.stft(y, n_fft=n_fft, hop_length=hop_length, win_length=n_fft, window=scipy.signal.hamming(n_fft), center=False)
 
-  # Calculate centroid: weighted mean of frequencies in signal
-  if np.sum(S) == 0:
-    cent = np.zeros((K,1))
-  else:
-    cent = np.sum(np.multiply(freq,S),axis=0)/(np.sum(S,axis=0) + np.spacing(1))
+    n_fft = 2 * (S.shape[0] - 1)
 
-  return cent
+    # Get bin center frequencies
+    freq = librosa.fft_frequencies(sr=sr, n_fft=n_fft)
+    S_norm = librosa.util.normalize(S, norm=1, axis=0)
+    # Calculate centroid: weighted mean of frequencies in signal
+    cent = np.dot(freq, S_norm)/np.sum(S, axis=0)
 
-def bandwidth(S=None,centroid=None,sr=22050):
-  '''Compute spectral bandwidth
+    return cent
 
-  :parameters:
-  - S : np.ndarray or None
-  stft spectrogram
+def bandwidth(y=None, sr=22050, S=None, n_fft=512, hop_length=256, centroid=None):
+    '''Compute spectral bandwidth
 
-  - sr : int > 0
-  audio sampling rate of ``S``
+    :parameters:
+    - S : np.ndarray or None
+    stft spectrogram
 
-  - centroid : np.ndarray or None
-  centroid frequencies
+    - sr : int > 0
+    audio sampling rate of ``S``
 
-  :returns:
-  - band : np.ndarray
-  bandwidth frequencies
-  '''
-  
-  N,K = np.shape(S)
-  # Get bin center frequencies
-  freq = np.transpose(np.linspace(0,sr/2,N))
-  freq = np.transpose(np.tile(freq,(K,1)))
+    - centroid : np.ndarray or None
+    centroid frequencies
 
-  # Matrix of centroid frequencies
-  centroid = np.tile(np.transpose(centroid),(N,1))
+    :returns:
+    - band : np.ndarray
+    bandwidth frequencies
+    '''
+    # If we don't have a spectrogram, build one
+    if S is None:
+      S = librosa.stft(y, n_fft=n_fft, hop_length=hop_length, win_length=n_fft, window=scipy.signal.hamming(n_fft), center=False)
 
-  # Spectral bandwidth calculation
-  band = np.sum(np.multiply(S,np.absolute(freq-centroid)),axis=0)/N
-  
-  return band
-  
+    n_fft = 2 * (S.shape[0] - 1)
 
-def rolloff(S=None,sr=22050,roll_percent=0.85):
-  '''Compute rolloff frequency
+    # Get bin center frequencies
+    freq = librosa.fft_frequencies(sr=sr, n_fft=n_fft)
+    S_norm = librosa.util.normalize(S, norm=1, axis=0)
 
-  :parameters:
-  - S : np.ndarray or None
-  stft spectrogram
+    band = np.sum(np.multiply(S_norm, np.absolute(np.reshape(freq, (S.shape[0], 1))-centroid)), axis=0)/S.shape[0]
 
-  - sr : int > 0
-  audio sampling rate of ``S``
+    return band
 
-  - roll_percent : 0 < float < 1
+def rolloff(y=None, sr=22050, S=None, n_fft=512, hop_length=256, roll_percent=0.85):
+    '''Compute rolloff frequency
 
-  :returns:
-  - roll : np.ndarray
-  rolloff frequencies
-  '''
+    :parameters:
+    - S : np.ndarray or None
+    stft spectrogram
 
-  N,K = np.shape(S)
-  # Get bin center frequencies
-  freq = np.transpose(np.linspace(0,sr/2,N))
-  freq = np.transpose(np.tile(freq,(K,1)))
+    - sr : int > 0
+    audio sampling rate of ``S``
 
-  # Calculate roll_percent energy
-  total_energy = np.cumsum(S,axis=0)
-  threshold = roll_percent*total_energy[-1,:]
-  threshold = np.tile(threshold,(N,1))
+    - roll_percent : 0 < float < 1
 
-  # Find values under the threshold
-  ind = np.where(total_energy < threshold,np.nan,1)
+    :returns:
+    - roll : np.ndarray
+    rolloff frequencies
+    '''
+    if S is None:
+      S = librosa.stft(y, n_fft=n_fft, hop_length=hop_length, win_length=n_fft, window=scipy.signal.hamming(n_fft), center=False)
 
-  # Remove frequencies under the threshold
-  freq = ind*freq
+    n_fft = 2 * (S.shape[0] - 1)
 
-  # Lowest remaining frequency is the rolloff frequency
-  roll = np.nanmin(freq,axis=0)
+    # Get bin center frequencies
+    freq = librosa.fft_frequencies(sr=fs, n_fft=n_fft)
+    S_norm = librosa.util.normalize(S, norm=1, axis=0)
 
-  return roll
+    total_energy = np.cumsum(S_norm, axis=0)
+    threshold = 0.85*total_energy[-1, :]
+
+    ind = np.where(total_energy < np.reshape(threshold, (1, S_norm.shape[1])), np.nan, 1)
+
+    # Remove frequencies under the threshold
+    freq = ind*np.reshape(freq, (S_norm.shape[0], 1))
+
+    # Lowest remaining frequency is the rolloff frequency
+    roll = np.nanmin(freq, axis=0)
+
+    return roll
 
 
-def flux(S=None):
-  '''Compute spectral flux
+def flux(y=None, S=None, n_fft=512, hop_length=256):
+    '''Compute spectral flux
 
-  :parameters:
-  - S : np.ndarray or None
-  stft spectrogram
+    :parameters:
+    - S : np.ndarray or None
+    stft spectrogram
 
-  :returns:
-  - fluxVals : np.ndarray
-  spectral flux
-  '''
-  
-  N,K = np.shape(S)
+    :returns:
+    - fluxVals : np.ndarray
+    spectral flux
+    '''
+    # If we don't have a spectrogram, build one
+    if S is None:
+      S = librosa.stft(y, n_fft=n_fft, hop_length=hop_length, win_length=n_fft, window=scipy.signal.hamming(n_fft), center=False)
 
-  # Create delayed spectrogram by adding zeros
-  delayed_spectrogram = np.concatenate((np.zeros((N,1)), S[:,0:-1]),1)
-  flux = S-delayed_spectrogram
-  # Calculation of flux: sum of differences between spectrogram and delayed spectrogram
-  fluxVals = np.sum(np.power(flux,2),axis=0)
+    S_norm = librosa.util.normalize(S, norm=1, axis=0)
 
-  return fluxVals
+    # Create delayed spectrogram by adding zeros
+    delayed_spectrogram = np.concatenate((np.zeros((S.shape[0], 1)), S_norm[:, 0:-1]), 1)
+    flux = S_norm-delayed_spectrogram
+    # Calculation of flux: sum of differences between spectrogram and delayed spectrogram
+    fluxVals = np.sum(np.power(flux, 2), axis=0)
 
-def spectral_contrast(S=None,sr=22050):
-  '''Compute spectral contrast
+    return fluxVals
 
-  :parameters:
-  - S : np.ndarray or None
-  stft spectrogram
+def spectral_contrast(y=None, sr=22050, S=None, n_fft=512, hop_length=256):
+    '''Compute spectral contrast
 
-  - sr : int > 0
-  audio sampling rate of ``S``
+    :parameters:
+    - S : np.ndarray or None
+    stft spectrogram
 
-  :returns:
-  - cont : 7 np.ndarray's
-  each row of spectral contrast values corresponds to a given octave based frequency
-  '''
+    - sr : int > 0
+    audio sampling rate of ``S``
 
-  K, numFrames = np.shape(S)
+    :returns:
+    - cont : 7 np.ndarray's
+    each row of spectral contrast values corresponds to a given octave based frequency
+    '''
+    # If we don't have a spectrogram, build one
+    if S is None:
+      S = librosa.stft(y, n_fft=n_fft, hop_length=hop_length, win_length=n_fft, window=scipy.signal.hamming(n_fft), center=False)
 
-  numBands = 6
-  octa = 200*2**np.arange(0,numBands+1)
-  octa = np.insert(octa,0,0)
+    S = librosa.util.normalize(S, norm=1, axis=0)
 
-  valley = np.zeros((numBands + 1,numFrames))
-  peak = np.zeros((numBands + 1,numFrames))
-  cont = np.zeros((numBands + 1,numFrames))
-  col = 1
+    K, numFrames = np.shape(S)
 
-  freq = np.linspace(0,sr/2,K)
+    numBands = 6
+    octa = 200*2**np.arange(0, numBands+1)
+    octa = np.insert(octa, 0, 0)
 
-  for k in range(1,np.size(octa)):
-    current_band = 1*np.logical_and(np.where(freq >= octa[k-1],1,0), np.where(freq <= octa[k],1,0))
+    valley = np.zeros((numBands + 1, numFrames))
+    peak = np.zeros((numBands + 1, numFrames))
+    cont = np.zeros((numBands + 1, numFrames))
 
-    if k > 1:
-      idx = np.nonzero(current_band == 1)[0]
-      idx = idx[0] + 1
-      current_band[idx-2] = 1
+    freq = np.linspace(0, sr/2, K)
 
-      
+    for k in range(1, np.size(octa)):
+      current_band = 1*np.logical_and(np.where(freq >= octa[k-1], 1, 0), np.where(freq <= octa[k], 1, 0))
 
-    if k == np.size(octa) - 1:
-      idx = np.nonzero(current_band == 1)
-      idx = idx[-1]
-      idx = idx[-1] + 1
-      current_band[idx:np.size(current_band)+1] = 1
+      if k > 1:
+        idx = np.nonzero(current_band == 1)[0]
+        idx = idx[0] + 1
+        current_band[idx-2] = 1
 
-    
-    subBand = S[np.where(current_band==1)]
+      if k == np.size(octa) - 1:
+        idx = np.nonzero(current_band == 1)
+        idx = idx[-1]
+        idx = idx[-1] + 1
+        current_band[idx:np.size(current_band)+1] = 1
 
-    if k < np.size(octa - 1) - 1:
-      subBand = subBand[0:-1][:]
+      subBand = S[np.where(current_band == 1)]
 
-    if np.sum(current_band) < 50:
-      alph = 1
-    else:
-      alph = np.rint(0.02*np.sum(current_band))
+      if k < np.size(octa - 1) - 1:
+        subBand = subBand[0:-1][:]
 
-
-    alphi = int(alph)
-  
-    sortedr = np.sort(subBand,axis=0)
-  
-    valley[k-1] = (1/alph)*np.sum(sortedr[0:alphi],axis=0)
-
-    sortedr = sortedr[::-1]
-    peak[k-1] = (1/alph)*np.sum(sortedr[0:alphi],axis=0)
-
-  peak = np.transpose(peak)
-  valley = np.transpose(valley)
-  cont = peak - valley
-  return cont
-
-def rms(S=None):
-  '''Compute rms
-
-  :parameters:
-  - S : np.ndarray or None
-  stft spectrogram
-  :returns:
-  - rms : np.ndarray
-  RMS values
-  '''
-  N,K = np.shape(S)
-
-  #Calculate RMS value
-  rms = np.sqrt(np.sum(S*S,axis = 0)/N)
-  return rms
+      if np.sum(current_band) < 50:
+        alph = 1
+      else:
+        alph = np.rint(0.02*np.sum(current_band))
 
 
-def line_features(S,order=1,sr=22050):
-  '''Get coefficients of fitting an nth order polynomial to the data
+      alphi = int(alph)
 
-  :parameters:
-  - S : np.ndarray or None
-  stft spectrogram
+      sortedr = np.sort(subBand, axis=0)
 
-  - order : int > 0
-  order of polynimals to fit the line to
+      valley[k-1] = (1/alph)*np.sum(sortedr[0:alphi], axis=0)
 
-  - sr : int > 0
-  audio sampling rate of ``y``
+      sortedr = sortedr[::-1]
+      peak[k-1] = (1/alph)*np.sum(sortedr[0:alphi], axis=0)
 
-  :returns:
-  - 
-  '''
-  N,K = np.shape(S)
+    peak = np.transpose(peak)
+    valley = np.transpose(valley)
+    cont = peak - valley
+    return cont
 
-  # Get bin center frequencies
-  freq = np.transpose(np.linspace(0,sr/2,N))
+def rms(y=None, S=None, n_fft=512, hop_length=256):
+    '''Compute rms
 
-  slope = np.zeros((1,K))
-  intercept = np.zeros((1,K))
+    :parameters:
+    - S : np.ndarray or None
+    stft spectrogram
+    :returns:
+    - rms : np.ndarray
+    RMS values
+    '''
 
-  # Get polynomial coefficients of order order
-  for k in range(0,K):
-    p = np.polyfit(freq,S[:,k],order)
-    slope[:,k] = p[0]
-    intercept[:,k] = p[1]
+    # If we don't have a spectrogram, build one
+    if S is None:
+      S = librosa.stft(y, n_fft=n_fft, hop_length=hop_length, win_length=n_fft, window=scipy.signal.hamming(n_fft), center=False)
 
-  return (slope, intercept)
+    S_norm = librosa.util.normalize(S, norm=1, axis=0)
+
+    #Calculate RMS value
+    rms = np.sqrt(np.sum(S_norm*S_norm, axis=0)/S.shape[0])
+    return rms
 
 
+def line_features(y=None, sr=22050, S=None, n_fft=512, hop_length=256, order=1):
+    '''Get coefficients of fitting an nth order polynomial to the data
+
+    :parameters:
+    - S : np.ndarray or None
+    stft spectrogram
+
+    - order : int > 0
+    order of polynimals to fit the line to
+
+    - sr : int > 0
+    audio sampling rate of ``y``
+
+    :returns:
+    - slope : np.ndarray
+    slope of polynomial
+
+    - intercept : np.ndarray
+    intercept of polynomial
+    '''
+
+    # If we don't have a spectrogram, build one
+    if S is None:
+      S = librosa.stft(y, n_fft=n_fft, hop_length=hop_length, win_length=n_fft, window=scipy.signal.hamming(n_fft), center=False)
+
+    n_fft = 2 * (S.shape[0] - 1)
+
+    # Get bin center frequencies
+    freq = librosa.fft_frequencies(sr=sr, n_fft=n_fft)
+    S_norm = librosa.util.normalize(S, norm=1, axis=0)
+
+    slope = np.zeros((1, S.shape[1]))
+    intercept = np.zeros((1, S.shape[1]))
+
+    # Get polynomial coefficients of order order
+    for k in range(0, S.shape[1]):
+      p = np.polyfit(freq, S_norm[:, k], order)
+      slope[:, k] = p[0]
+      intercept[:, k] = p[1]
+
+    return (slope, intercept)
 
 #-- Chroma --#
 def logfsgram(y=None, sr=22050, S=None, n_fft=4096, hop_length=512, **kwargs):
