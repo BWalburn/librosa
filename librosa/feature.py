@@ -173,7 +173,7 @@ def flux(y=None, S=None, n_fft=512, hop_length=256):
     return fluxVals
 
 def spectral_contrast(y=None, sr=22050, S=None, n_fft=512, hop_length=256):
-     '''Compute spectral contrast
+    '''Compute spectral contrast
 
     :parameters:
     - y : np.ndarray or None
