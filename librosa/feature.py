@@ -12,11 +12,20 @@ def centroid(y=None, sr=22050, S=None, n_fft=512, hop_length=256):
     '''Compute spectral centroid
 
     :parameters:
-    - S : np.ndarray or None
-    stft spectrogram
+    - y : np.ndarray or None
+    audio time series
 
     - sr : int > 0
     audio sampling rate of ``S``
+
+    - S : np.ndarray or None
+    stft spectrogram
+
+    - n_fft      : int  > 0
+    FFT window size if provided ``y, sr`` instead of ``S`` 
+
+    - hop_length : int > 0
+    hop length if provided ``y, sr`` instead of ``S``
 
     :returns:
     - cent : np.ndarray
@@ -25,6 +34,8 @@ def centroid(y=None, sr=22050, S=None, n_fft=512, hop_length=256):
     # If we don't have a spectrogram, build one
     if S is None:
       S = librosa.stft(y, n_fft=n_fft, hop_length=hop_length, win_length=n_fft, window=scipy.signal.hamming(n_fft), center=False)
+      S = np.absolute(S)
+
 
     n_fft = 2 * (S.shape[0] - 1)
 
@@ -32,7 +43,7 @@ def centroid(y=None, sr=22050, S=None, n_fft=512, hop_length=256):
     freq = librosa.fft_frequencies(sr=sr, n_fft=n_fft)
     S_norm = librosa.util.normalize(S, norm=1, axis=0)
     # Calculate centroid: weighted mean of frequencies in signal
-    cent = np.dot(freq, S_norm)/np.sum(S, axis=0)
+    cent = np.dot(freq, S_norm)/np.sum(S_norm, axis=0)
 
     return cent
 
@@ -40,11 +51,20 @@ def bandwidth(y=None, sr=22050, S=None, n_fft=512, hop_length=256, centroid=None
     '''Compute spectral bandwidth
 
     :parameters:
-    - S : np.ndarray or None
-    stft spectrogram
+    - y : np.ndarray or None
+    audio time series
 
     - sr : int > 0
     audio sampling rate of ``S``
+
+    - S : np.ndarray or None
+    stft spectrogram
+
+    - n_fft      : int  > 0
+    FFT window size if provided ``y, sr`` instead of ``S`` 
+
+    - hop_length : int > 0
+    hop length if provided ``y, sr`` instead of ``S``
 
     - centroid : np.ndarray or None
     centroid frequencies
@@ -56,6 +76,7 @@ def bandwidth(y=None, sr=22050, S=None, n_fft=512, hop_length=256, centroid=None
     # If we don't have a spectrogram, build one
     if S is None:
       S = librosa.stft(y, n_fft=n_fft, hop_length=hop_length, win_length=n_fft, window=scipy.signal.hamming(n_fft), center=False)
+      S = np.absolute(S)
 
     n_fft = 2 * (S.shape[0] - 1)
 
@@ -71,11 +92,20 @@ def rolloff(y=None, sr=22050, S=None, n_fft=512, hop_length=256, roll_percent=0.
     '''Compute rolloff frequency
 
     :parameters:
-    - S : np.ndarray or None
-    stft spectrogram
+    - y : np.ndarray or None
+    audio time series
 
     - sr : int > 0
     audio sampling rate of ``S``
+
+    - S : np.ndarray or None
+    stft spectrogram
+
+    - n_fft      : int  > 0
+    FFT window size if provided ``y, sr`` instead of ``S`` 
+
+    - hop_length : int > 0
+    hop length if provided ``y, sr`` instead of ``S``
 
     - roll_percent : 0 < float < 1
 
@@ -85,6 +115,7 @@ def rolloff(y=None, sr=22050, S=None, n_fft=512, hop_length=256, roll_percent=0.
     '''
     if S is None:
       S = librosa.stft(y, n_fft=n_fft, hop_length=hop_length, win_length=n_fft, window=scipy.signal.hamming(n_fft), center=False)
+      S = np.absolute(S)
 
     n_fft = 2 * (S.shape[0] - 1)
 
@@ -110,8 +141,17 @@ def flux(y=None, S=None, n_fft=512, hop_length=256):
     '''Compute spectral flux
 
     :parameters:
+    - y : np.ndarray or None
+    audio time series
+
     - S : np.ndarray or None
     stft spectrogram
+
+    - n_fft      : int  > 0
+    FFT window size if provided ``y, sr`` instead of ``S`` 
+
+    - hop_length : int > 0
+    hop length if provided ``y, sr`` instead of ``S``
 
     :returns:
     - fluxVals : np.ndarray
@@ -120,6 +160,7 @@ def flux(y=None, S=None, n_fft=512, hop_length=256):
     # If we don't have a spectrogram, build one
     if S is None:
       S = librosa.stft(y, n_fft=n_fft, hop_length=hop_length, win_length=n_fft, window=scipy.signal.hamming(n_fft), center=False)
+      S = np.absolute(S)
 
     S_norm = librosa.util.normalize(S, norm=1, axis=0)
 
@@ -132,14 +173,23 @@ def flux(y=None, S=None, n_fft=512, hop_length=256):
     return fluxVals
 
 def spectral_contrast(y=None, sr=22050, S=None, n_fft=512, hop_length=256):
-    '''Compute spectral contrast
+     '''Compute spectral contrast
 
     :parameters:
-    - S : np.ndarray or None
-    stft spectrogram
+    - y : np.ndarray or None
+    audio time series
 
     - sr : int > 0
     audio sampling rate of ``S``
+
+    - S : np.ndarray or None
+    stft spectrogram
+
+    - n_fft      : int  > 0
+    FFT window size if provided ``y, sr`` instead of ``S`` 
+
+    - hop_length : int > 0
+    hop length if provided ``y, sr`` instead of ``S``
 
     :returns:
     - cont : 7 np.ndarray's
@@ -148,10 +198,11 @@ def spectral_contrast(y=None, sr=22050, S=None, n_fft=512, hop_length=256):
     # If we don't have a spectrogram, build one
     if S is None:
       S = librosa.stft(y, n_fft=n_fft, hop_length=hop_length, win_length=n_fft, window=scipy.signal.hamming(n_fft), center=False)
+      S = np.absolute(S)
 
-    S = librosa.util.normalize(S, norm=1, axis=0)
+    S_norm = librosa.util.normalize(S, norm=1, axis=0)
 
-    K, numFrames = np.shape(S)
+    K, numFrames = np.shape(S_norm)
 
     numBands = 6
     octa = 200*2**np.arange(0, numBands+1)
@@ -177,7 +228,7 @@ def spectral_contrast(y=None, sr=22050, S=None, n_fft=512, hop_length=256):
         idx = idx[-1] + 1
         current_band[idx:np.size(current_band)+1] = 1
 
-      subBand = S[np.where(current_band == 1)]
+      subBand = S_norm[np.where(current_band == 1)]
 
       if k < np.size(octa - 1) - 1:
         subBand = subBand[0:-1][:]
@@ -206,8 +257,18 @@ def rms(y=None, S=None, n_fft=512, hop_length=256):
     '''Compute rms
 
     :parameters:
+    - y : np.ndarray or None
+    audio time series
+
     - S : np.ndarray or None
     stft spectrogram
+
+    - n_fft      : int  > 0
+    FFT window size if provided ``y, sr`` instead of ``S`` 
+
+    - hop_length : int > 0
+    hop length if provided ``y, sr`` instead of ``S``
+
     :returns:
     - rms : np.ndarray
     RMS values
@@ -216,6 +277,7 @@ def rms(y=None, S=None, n_fft=512, hop_length=256):
     # If we don't have a spectrogram, build one
     if S is None:
       S = librosa.stft(y, n_fft=n_fft, hop_length=hop_length, win_length=n_fft, window=scipy.signal.hamming(n_fft), center=False)
+      S = np.absolute(S)
 
     S_norm = librosa.util.normalize(S, norm=1, axis=0)
 
@@ -228,14 +290,23 @@ def line_features(y=None, sr=22050, S=None, n_fft=512, hop_length=256, order=1):
     '''Get coefficients of fitting an nth order polynomial to the data
 
     :parameters:
+    - y : np.ndarray or None
+    audio time series
+    
+    - sr : int > 0
+    audio sampling rate of ``y``
+
     - S : np.ndarray or None
     stft spectrogram
 
+    - n_fft      : int  > 0
+    FFT window size if provided ``y, sr`` instead of ``S`` 
+
+    - hop_length : int > 0
+    hop length if provided ``y, sr`` instead of ``S``
+
     - order : int > 0
     order of polynimals to fit the line to
-
-    - sr : int > 0
-    audio sampling rate of ``y``
 
     :returns:
     - slope : np.ndarray
@@ -248,6 +319,7 @@ def line_features(y=None, sr=22050, S=None, n_fft=512, hop_length=256, order=1):
     # If we don't have a spectrogram, build one
     if S is None:
       S = librosa.stft(y, n_fft=n_fft, hop_length=hop_length, win_length=n_fft, window=scipy.signal.hamming(n_fft), center=False)
+      S = np.absolute(S)
 
     n_fft = 2 * (S.shape[0] - 1)
 
