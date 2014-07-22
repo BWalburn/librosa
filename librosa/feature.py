@@ -89,7 +89,7 @@ def rolloff(y=None, sr=22050, S=None, n_fft=512, hop_length=256, roll_percent=0.
     n_fft = 2 * (S.shape[0] - 1)
 
     # Get bin center frequencies
-    freq = librosa.fft_frequencies(sr=fs, n_fft=n_fft)
+    freq = librosa.fft_frequencies(sr=sr, n_fft=n_fft)
     S_norm = librosa.util.normalize(S, norm=1, axis=0)
 
     total_energy = np.cumsum(S_norm, axis=0)
