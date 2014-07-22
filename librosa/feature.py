@@ -34,7 +34,8 @@ def centroid(y=None, sr=22050, S=None, n_fft=512, hop_length=256):
     # If we don't have a spectrogram, build one
     if S is None:
       S = librosa.stft(y, n_fft=n_fft, hop_length=hop_length, win_length=n_fft, window=scipy.signal.hamming(n_fft), center=False)
-      S = np.absolute(S)
+      
+    S = np.absolute(S)
 
 
     n_fft = 2 * (S.shape[0] - 1)
@@ -76,7 +77,8 @@ def bandwidth(y=None, sr=22050, S=None, n_fft=512, hop_length=256, centroid=None
     # If we don't have a spectrogram, build one
     if S is None:
       S = librosa.stft(y, n_fft=n_fft, hop_length=hop_length, win_length=n_fft, window=scipy.signal.hamming(n_fft), center=False)
-      S = np.absolute(S)
+      
+    S = np.absolute(S)
 
     n_fft = 2 * (S.shape[0] - 1)
 
@@ -115,7 +117,8 @@ def rolloff(y=None, sr=22050, S=None, n_fft=512, hop_length=256, roll_percent=0.
     '''
     if S is None:
       S = librosa.stft(y, n_fft=n_fft, hop_length=hop_length, win_length=n_fft, window=scipy.signal.hamming(n_fft), center=False)
-      S = np.absolute(S)
+      
+    S = np.absolute(S)
 
     n_fft = 2 * (S.shape[0] - 1)
 
@@ -160,7 +163,8 @@ def flux(y=None, S=None, n_fft=512, hop_length=256):
     # If we don't have a spectrogram, build one
     if S is None:
       S = librosa.stft(y, n_fft=n_fft, hop_length=hop_length, win_length=n_fft, window=scipy.signal.hamming(n_fft), center=False)
-      S = np.absolute(S)
+      
+    S = np.absolute(S)
 
     S_norm = librosa.util.normalize(S, norm=1, axis=0)
 
@@ -198,7 +202,8 @@ def spectral_contrast(y=None, sr=22050, S=None, n_fft=512, hop_length=256):
     # If we don't have a spectrogram, build one
     if S is None:
       S = librosa.stft(y, n_fft=n_fft, hop_length=hop_length, win_length=n_fft, window=scipy.signal.hamming(n_fft), center=False)
-      S = np.absolute(S)
+      
+    S = np.absolute(S)
 
     S_norm = librosa.util.normalize(S, norm=1, axis=0)
 
@@ -277,7 +282,8 @@ def rms(y=None, S=None, n_fft=512, hop_length=256):
     # If we don't have a spectrogram, build one
     if S is None:
       S = librosa.stft(y, n_fft=n_fft, hop_length=hop_length, win_length=n_fft, window=scipy.signal.hamming(n_fft), center=False)
-      S = np.absolute(S)
+      
+    S = np.absolute(S)
 
     S_norm = librosa.util.normalize(S, norm=1, axis=0)
 
@@ -319,7 +325,8 @@ def line_features(y=None, sr=22050, S=None, n_fft=512, hop_length=256, order=1):
     # If we don't have a spectrogram, build one
     if S is None:
       S = librosa.stft(y, n_fft=n_fft, hop_length=hop_length, win_length=n_fft, window=scipy.signal.hamming(n_fft), center=False)
-      S = np.absolute(S)
+      
+    S = np.absolute(S)
 
     n_fft = 2 * (S.shape[0] - 1)
 
