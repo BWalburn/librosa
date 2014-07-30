@@ -46,7 +46,7 @@ def cent_test():
     def _cent_test(infile):
         DATA    =load(infile)
         sr = DATA['sr'][0][0]
-        z       =librosa.feature.centroid(DATA['S'],sr)
+        z       =librosa.feature.centroid(S=DATA['S'],sr=44100)
 
         assert numpy.allclose(z,DATA['cent'])
 
@@ -59,7 +59,7 @@ def cent_test():
 def flux_test():
     def _flux_test(infile):
         DATA    =load(infile)
-        z       =librosa.feature.flux(DATA['S'])
+        z       =librosa.feature.flux(S=DATA['S'])
 
         assert numpy.allclose(z,DATA['flux'])
 
@@ -72,7 +72,7 @@ def flux_test():
 def band_test():
     def _band_test(infile):
         DATA    =load(infile)
-        z       =librosa.feature.bandwidth(DATA['S'],DATA['cent'][0],44100)
+        z       =librosa.feature.bandwidth(S=DATA['S'],sr=44100)
 
         assert numpy.allclose(z,DATA['band'])
 
@@ -91,7 +91,7 @@ def roll_test():
         DATA    =load(infile)
         sr = DATA['sr'][0][0]
         roll_percent = DATA['roll_percent'][0][0]
-        z       =librosa.feature.rolloff(DATA['S'],sr,0.85)
+        z       =librosa.feature.rolloff(S=DATA['S'],sr=44100)
 
         assert numpy.allclose(z,DATA['roll'])
 
@@ -103,7 +103,7 @@ def roll_test():
 def rms_test():
     def _rms_test(infile):
         DATA    =load(infile)
-        z       =librosa.feature.rms(DATA['S'])
+        z       =librosa.feature.rms(S=DATA['S'])
 
         assert numpy.allclose(z,DATA['rms'])
 
@@ -118,7 +118,7 @@ def line_test():
     def _line_test(infile):
         DATA    =load(infile)
         sr = DATA['sr'][0][0]
-        z,j     =librosa.feature.line_features(DATA['S'],1,sr)
+        z,j     =librosa.feature.line_features(S=DATA['S'],sr=44100)
 
         assert numpy.allclose(z,DATA['sl'])
 
@@ -133,7 +133,7 @@ def line_test():
 def spec_test():
     def _spec_test(infile):
         DATA    =load(infile)
-        z      =librosa.feature.spectral_contrast(DATA['S'],44100)
+        z      =librosa.feature.spectral_contrast(S=DATA['S'],sr=44100)
 
         assert numpy.allclose(z,DATA['cont'])
 

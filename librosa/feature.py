@@ -346,7 +346,7 @@ def rms(y=None, S=None, n_fft=2048, hop_length=512):
     S = np.absolute(S)
 
     #Calculate RMS value
-    rms = np.sqrt(np.sum(S_norm*S_norm, axis=0)/S.shape[0])
+    rms = np.sqrt(np.sum(S*S, axis=0)/S.shape[0])
     return rms
 
 
