@@ -24,6 +24,7 @@
 import librosa
 import os, glob
 import numpy, scipy.io
+import ipdb
 
 from nose.tools import nottest
 
@@ -39,6 +40,110 @@ def load(infile):
 #--           --#
 
 #-- Tests     --#
+
+
+def cent_test():
+    def _cent_test(infile):
+        DATA    =load(infile)
+        sr = DATA['sr'][0][0]
+        z       =librosa.feature.centroid(DATA['S'],sr)
+
+        assert numpy.allclose(z,DATA['cent'])
+
+    for infile in files('data/cent-000.mat'):
+        yield (_cent_test,infile)
+    pass
+
+
+
+def flux_test():
+    def _flux_test(infile):
+        DATA    =load(infile)
+        z       =librosa.feature.flux(DATA['S'])
+
+        assert numpy.allclose(z,DATA['flux'])
+
+    for infile in files('data/flux-000.mat'):
+        yield (_flux_test,infile)
+        
+    pass
+
+
+def band_test():
+    def _band_test(infile):
+        DATA    =load(infile)
+        z       =librosa.feature.bandwidth(DATA['S'],DATA['cent'][0],44100)
+
+        assert numpy.allclose(z,DATA['band'])
+
+    for infile in files('data/band-000.mat'):
+        yield (_band_test,infile)
+        
+    pass
+
+
+
+
+def roll_test():
+    def _roll_test(infile):
+
+        # ipdb.set_trace()
+        DATA    =load(infile)
+        sr = DATA['sr'][0][0]
+        roll_percent = DATA['roll_percent'][0][0]
+        z       =librosa.feature.rolloff(DATA['S'],sr,0.85)
+
+        assert numpy.allclose(z,DATA['roll'])
+
+    for infile in files('data/roll-000.mat'):
+        yield (_roll_test,infile)
+        
+    pass
+
+def rms_test():
+    def _rms_test(infile):
+        DATA    =load(infile)
+        z       =librosa.feature.rms(DATA['S'])
+
+        assert numpy.allclose(z,DATA['rms'])
+
+    for infile in files('data/rms-000.mat'):
+        yield (_rms_test,infile)
+        
+        
+    pass
+
+
+def line_test():
+    def _line_test(infile):
+        DATA    =load(infile)
+        sr = DATA['sr'][0][0]
+        z,j     =librosa.feature.line_features(DATA['S'],1,sr)
+
+        assert numpy.allclose(z,DATA['sl'])
+
+    for infile in files('data/line-000.mat'):
+        yield (_line_test,infile)
+        
+        
+    pass
+
+
+
+def spec_test():
+    def _spec_test(infile):
+        DATA    =load(infile)
+        z      =librosa.feature.spectral_contrast(DATA['S'],44100)
+
+        assert numpy.allclose(z,DATA['cont'])
+
+    for infile in files('data/spec-000.mat'):
+        yield (_spec_test,infile)
+        
+        
+    pass
+
+
 def test_hz_to_mel():
     def __test_to_mel(infile):
         DATA    = load(infile)

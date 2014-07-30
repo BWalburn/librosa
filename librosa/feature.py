@@ -6,10 +6,20 @@ import scipy.signal
 
 import librosa.core
 import librosa.util
+# pylint: disable=E1101
 
+def centroid(y=None, sr=22050, S=None, n_fft=2048, hop_length=512):
+    '''Compute spectral centroid, “center of mass”, or 
+    brightness of spectrum. It is calculated as the weighted mean 
+    (using frequency magnitudes as the weights) of the frequencies in the signal.
 
-def centroid(y=None, sr=22050, S=None, n_fft=512, hop_length=256):
-    '''Compute spectral centroid
+    :usage:
+        >>> # Generate centroid from a time series
+        >>> cent = librosa.feature.centroid(y=y, sr=sr)
+
+        >>> # Use a pre-computed spectrogram
+        >>> S = librosa.stft(y, n_fft=2048, hop_length=512, win_length=2048, window=scipy.signal.hamming(2048), center=False)
+        >>> cent = librosa.feature.centroid(S=S)
 
     :parameters:
     - y : np.ndarray or None
@@ -33,7 +43,7 @@ def centroid(y=None, sr=22050, S=None, n_fft=512, hop_length=256):
     '''
     # If we don't have a spectrogram, build one
     if S is None:
-      S = librosa.stft(y, n_fft=n_fft, hop_length=hop_length, win_length=n_fft, window=scipy.signal.hamming(n_fft), center=False)
+      S = librosa.stft(y, window=scipy.signal.hamming(n_fft), center=False)
       
     S = np.absolute(S)
 
@@ -44,12 +54,22 @@ def centroid(y=None, sr=22050, S=None, n_fft=512, hop_length=256):
     freq = librosa.fft_frequencies(sr=sr, n_fft=n_fft)
     S_norm = librosa.util.normalize(S, norm=1, axis=0)
     # Calculate centroid: weighted mean of frequencies in signal
-    cent = np.dot(freq, S_norm)/np.sum(S_norm, axis=0)
+    cent = np.dot(freq, S_norm)
 
     return cent
 
-def bandwidth(y=None, sr=22050, S=None, n_fft=512, hop_length=256, centroid=None):
-    '''Compute spectral bandwidth
+def bandwidth(y=None, sr=22050, S=None, n_fft=2048, hop_length=512):
+    '''Compute spectral bandwidth. It is computed as the weighted 
+    magnitude mean of the difference between the spectral centroid 
+    and the frequencies in the signal.
+
+    :usage:
+        >>> # Generate bandwidth from a time series
+        >>> band = librosa.feature.bandwidth(y=y, sr=sr)
+
+        >>> # Use a pre-computed spectrogram
+        >>> S = librosa.stft(y, n_fft=2048, hop_length=512, win_length=2048, window=scipy.signal.hamming(2048), center=False)
+        >>> band = librosa.feature.bandwidth(S=S)
 
     :parameters:
     - y : np.ndarray or None
@@ -76,7 +96,7 @@ def bandwidth(y=None, sr=22050, S=None, n_fft=512, hop_length=256, centroid=None
     '''
     # If we don't have a spectrogram, build one
     if S is None:
-      S = librosa.stft(y, n_fft=n_fft, hop_length=hop_length, win_length=n_fft, window=scipy.signal.hamming(n_fft), center=False)
+      S = librosa.stft(y, window=scipy.signal.hamming(n_fft), center=False)
       
     S = np.absolute(S)
 
@@ -86,12 +106,24 @@ def bandwidth(y=None, sr=22050, S=None, n_fft=512, hop_length=256, centroid=None
     freq = librosa.fft_frequencies(sr=sr, n_fft=n_fft)
     S_norm = librosa.util.normalize(S, norm=1, axis=0)
 
-    band = np.sum(np.multiply(S_norm, np.absolute(np.reshape(freq, (S.shape[0], 1))-centroid)), axis=0)/S.shape[0]
+    # Create array of centroid frequencies
+    centroid = librosa.feature.centroid(y, sr, S, n_fft, hop_length)
+
+    band = np.mean(np.multiply(S_norm, np.absolute(np.reshape(freq, (S.shape[0], 1))-centroid)), axis=0)
 
     return band
 
-def rolloff(y=None, sr=22050, S=None, n_fft=512, hop_length=256, roll_percent=0.85):
-    '''Compute rolloff frequency
+def rolloff(y=None, sr=22050, S=None, n_fft=2048, hop_length=512, roll_percent=0.85):
+    '''Compute rolloff, or spectral shape. It is the set of frequencies below which the 
+    given percentage of power in the spectrum lies.
+
+    :usage:
+        >>> # Generate rolloff from a time series
+        >>> roll = librosa.feature.rolloff(y=y, sr=sr)
+
+        >>> # Use a pre-computed spectrogram
+        >>> S = librosa.stft(y, n_fft=2048, hop_length=512, win_length=2048, window=scipy.signal.hamming(2048), center=False)
+        >>> roll = librosa.feature.rolloff(S=S)
 
     :parameters:
     - y : np.ndarray or None
@@ -116,7 +148,7 @@ def rolloff(y=None, sr=22050, S=None, n_fft=512, hop_length=256, roll_percent=0.
     rolloff frequencies
     '''
     if S is None:
-      S = librosa.stft(y, n_fft=n_fft, hop_length=hop_length, win_length=n_fft, window=scipy.signal.hamming(n_fft), center=False)
+      S = librosa.stft(y, window=scipy.signal.hamming(n_fft), center=False)
       
     S = np.absolute(S)
 
@@ -140,8 +172,17 @@ def rolloff(y=None, sr=22050, S=None, n_fft=512, hop_length=256, roll_percent=0.
     return roll
 
 
-def flux(y=None, S=None, n_fft=512, hop_length=256):
-    '''Compute spectral flux
+def flux(y=None, S=None, n_fft=2048, hop_length=512):
+    '''Compute spectral flux, or measure of
+    spectral change between adjacent frames
+
+    :usage:
+        >>> # Generate flux from a time series
+        >>> fluxVals = librosa.feature.flux(y=y, sr=sr)
+
+        >>> # Use a pre-computed spectrogram
+        >>> S = librosa.stft(y, n_fft=2048, hop_length=512, win_length=2048, window=scipy.signal.hamming(2048), center=False)
+        >>> fluxVals = librosa.feature.flux(S=S)
 
     :parameters:
     - y : np.ndarray or None
@@ -162,22 +203,33 @@ def flux(y=None, S=None, n_fft=512, hop_length=256):
     '''
     # If we don't have a spectrogram, build one
     if S is None:
-      S = librosa.stft(y, n_fft=n_fft, hop_length=hop_length, win_length=n_fft, window=scipy.signal.hamming(n_fft), center=False)
+      S = librosa.stft(y, window=scipy.signal.hamming(n_fft), center=False)
       
     S = np.absolute(S)
 
     S_norm = librosa.util.normalize(S, norm=1, axis=0)
 
-    # Create delayed spectrogram by adding zeros
-    delayed_spectrogram = np.concatenate((np.zeros((S.shape[0], 1)), S_norm[:, 0:-1]), 1)
-    flux = S_norm-delayed_spectrogram
-    # Calculation of flux: sum of differences between spectrogram and delayed spectrogram
+    # Calculation of discrete difference along axis 0
+    flux = np.diff(S_norm)
+
+    # Calculation of flux
     fluxVals = np.sum(np.power(flux, 2), axis=0)
 
     return fluxVals
 
-def spectral_contrast(y=None, sr=22050, S=None, n_fft=512, hop_length=256):
-    '''Compute spectral contrast
+def spectral_contrast(y=None, sr=22050, S=None, n_fft=2048, hop_length=512):
+    '''Compute spectral contrast, outputs a seven row matrix of 
+    spectral contrast values (difference between peaks and valleys).  
+    Each row corresponds to a given octave based frequency 
+    band.  The first octave is 0-200Hz.
+
+    :usage:
+        >>> # Generate spectral contrast from a time series
+        >>> cont = librosa.feature.spectral_contrast(y=y, sr=sr)
+
+        >>> # Use a pre-computed spectrogram
+        >>> S = librosa.stft(y, n_fft=2048, hop_length=512, win_length=2048, window=scipy.signal.hamming(2048), center=False)
+        >>> cont = librosa.feature.spectral_contrast(S=S)
 
     :parameters:
     - y : np.ndarray or None
@@ -201,7 +253,7 @@ def spectral_contrast(y=None, sr=22050, S=None, n_fft=512, hop_length=256):
     '''
     # If we don't have a spectrogram, build one
     if S is None:
-      S = librosa.stft(y, n_fft=n_fft, hop_length=hop_length, win_length=n_fft, window=scipy.signal.hamming(n_fft), center=False)
+      S = librosa.stft(y, window=scipy.signal.hamming(n_fft), center=False)
       
     S = np.absolute(S)
 
@@ -258,8 +310,16 @@ def spectral_contrast(y=None, sr=22050, S=None, n_fft=512, hop_length=256):
     cont = peak - valley
     return cont
 
-def rms(y=None, S=None, n_fft=512, hop_length=256):
+def rms(y=None, S=None, n_fft=2048, hop_length=512):
     '''Compute rms
+
+    :usage:
+        >>> # Generate rms from a time series
+        >>> rms = librosa.feature.rms(y=y)
+
+        >>> # Use a pre-computed spectrogram
+        >>> S = librosa.stft(y, n_fft=2048, hop_length=512, win_length=2048, window=scipy.signal.hamming(2048), center=False)
+        >>> rms = librosa.feature.rms(S=S)
 
     :parameters:
     - y : np.ndarray or None
@@ -281,19 +341,26 @@ def rms(y=None, S=None, n_fft=512, hop_length=256):
 
     # If we don't have a spectrogram, build one
     if S is None:
-      S = librosa.stft(y, n_fft=n_fft, hop_length=hop_length, win_length=n_fft, window=scipy.signal.hamming(n_fft), center=False)
+      S = librosa.stft(y, window=scipy.signal.hamming(n_fft), center=False)
       
     S = np.absolute(S)
-
-    S_norm = librosa.util.normalize(S, norm=1, axis=0)
 
     #Calculate RMS value
     rms = np.sqrt(np.sum(S_norm*S_norm, axis=0)/S.shape[0])
     return rms
 
 
-def line_features(y=None, sr=22050, S=None, n_fft=512, hop_length=256, order=1):
-    '''Get coefficients of fitting an nth order polynomial to the data
+def line_features(y=None, sr=22050, S=None, n_fft=2048, hop_length=512, order=1):
+    '''Compute line features, i.e. get coefficients of fitting an 
+    nth order polynomial to the data
+
+    :usage:
+        >>> # Generate line features from a time series
+        >>> (slope, intercept) = librosa.feature.line_features(y=y, sr=sr)
+
+        >>> # Use a pre-computed spectrogram
+        >>> S = librosa.stft(y, n_fft=2048, hop_length=512, win_length=2048, window=scipy.signal.hamming(2048), center=False)
+        >>> (slope, intercept) = librosa.feature.line_features(S=S)
 
     :parameters:
     - y : np.ndarray or None
@@ -324,7 +391,7 @@ def line_features(y=None, sr=22050, S=None, n_fft=512, hop_length=256, order=1):
 
     # If we don't have a spectrogram, build one
     if S is None:
-      S = librosa.stft(y, n_fft=n_fft, hop_length=hop_length, win_length=n_fft, window=scipy.signal.hamming(n_fft), center=False)
+      S = librosa.stft(y, window=scipy.signal.hamming(n_fft), center=False)
       
     S = np.absolute(S)
 
