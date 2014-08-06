@@ -61,7 +61,7 @@ def flux_test():
         DATA    =load(infile)
         z       =librosa.feature.flux(S=DATA['S'])
 
-        assert numpy.allclose(z[1:],DATA['flux'],atol=1e-3)
+        assert numpy.allclose(z,DATA['flux'],atol=1e-3)
 
     for infile in files('data/flux-000.mat'):
         yield (_flux_test,infile)
