@@ -46,9 +46,9 @@ def cent_test():
     def _cent_test(infile):
         DATA    =load(infile)
         sr = DATA['sr'][0][0]
-        z       =librosa.feature.centroid(S=DATA['S'],sr=44100)
+        z       =librosa.feature.centroid(S=DATA['S'],sr=sr)
 
-        assert numpy.allclose(z,DATA['cent'])
+        assert numpy.allclose(z,DATA['cent'],atol=1e-3)
 
     for infile in files('data/cent-000.mat'):
         yield (_cent_test,infile)
@@ -61,7 +61,7 @@ def flux_test():
         DATA    =load(infile)
         z       =librosa.feature.flux(S=DATA['S'])
 
-        assert numpy.allclose(z,DATA['flux'])
+        assert numpy.allclose(z[1:],DATA['flux'],atol=1e-3)
 
     for infile in files('data/flux-000.mat'):
         yield (_flux_test,infile)
@@ -72,9 +72,10 @@ def flux_test():
 def band_test():
     def _band_test(infile):
         DATA    =load(infile)
-        z       =librosa.feature.bandwidth(S=DATA['S'],sr=44100)
+        sr = DATA['sr'][0][0]
+        z       =librosa.feature.bandwidth(S=DATA['S'],sr=sr)
 
-        assert numpy.allclose(z,DATA['band'])
+        assert numpy.allclose(z,DATA['band'],atol=1e-3)
 
     for infile in files('data/band-000.mat'):
         yield (_band_test,infile)
@@ -91,9 +92,9 @@ def roll_test():
         DATA    =load(infile)
         sr = DATA['sr'][0][0]
         roll_percent = DATA['roll_percent'][0][0]
-        z       =librosa.feature.rolloff(S=DATA['S'],sr=44100)
+        z       =librosa.feature.rolloff(S=DATA['S'],sr=sr)
 
-        assert numpy.allclose(z,DATA['roll'])
+        assert numpy.allclose(z,DATA['roll'],atol=1e-3)
 
     for infile in files('data/roll-000.mat'):
         yield (_roll_test,infile)
@@ -105,7 +106,7 @@ def rms_test():
         DATA    =load(infile)
         z       =librosa.feature.rms(S=DATA['S'])
 
-        assert numpy.allclose(z,DATA['rms'])
+        assert numpy.allclose(z,DATA['rms'],atol=1e-3)
 
     for infile in files('data/rms-000.mat'):
         yield (_rms_test,infile)
@@ -118,9 +119,9 @@ def line_test():
     def _line_test(infile):
         DATA    =load(infile)
         sr = DATA['sr'][0][0]
-        z,j     =librosa.feature.line_features(S=DATA['S'],sr=44100)
+        z,j     =librosa.feature.line_features(S=DATA['S'],sr=sr)
 
-        assert numpy.allclose(z,DATA['sl'])
+        assert numpy.allclose(z,DATA['sl'],atol=1e-3)
 
     for infile in files('data/line-000.mat'):
         yield (_line_test,infile)
@@ -133,9 +134,10 @@ def line_test():
 def spec_test():
     def _spec_test(infile):
         DATA    =load(infile)
-        z      =librosa.feature.spectral_contrast(S=DATA['S'],sr=44100)
+        sr = DATA['sr'][0][0]
+        z      =librosa.feature.spectral_contrast(S=DATA['S'],sr=sr)
 
-        assert numpy.allclose(z,DATA['cont'])
+        assert numpy.allclose(z,DATA['cont'],atol=1e-3)
 
     for infile in files('data/spec-000.mat'):
         yield (_spec_test,infile)
